@@ -19,7 +19,7 @@ go run .
 
 ## Usage
 ```bash
-curl "http://localhost:8080/proxy?url=https://example.com"
+curl -v "http://localhost:8080/proxy?url=https://example.com"
 ```
 
 Check the `X-Cache` header in the response:
