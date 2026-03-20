@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"sync"
 
@@ -34,11 +35,26 @@ func main() {
 	flag.Parse()
 	fmt.Println(*name, *age, *verbose)
 	/* println(args[1]) */
+	go func() {
+		ticker := time.NewTicker(10 * time.Minute)
+		for range ticker.C {
+			cache.mu.Lock()
+			for k, v := range cache.store {
+				if time.Since(v.StoredAt) > v.TTL {
+					delete(cache.store, k)
+				}
+			}
+			defer cache.mu.Unlock()
+		}
+	}()
 	http.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "hello there gang")
 	})
 	http.HandleFunc("/proxy", ProxyHandler(&cache))
-	http.ListenAndServe(":8080", nil)
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		log.Fatal(err)
+
+	}
 }
 func ProxyHandler(cache *Cache) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
